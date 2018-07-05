@@ -57,9 +57,11 @@ class JP1KanshiStatus(val baseurl: String = "http://161.93.233.94/") {
                 println("__EVENTARGUMENT : no element")
             }
 
+
             if (htmldoc.getElementById("__VIEWSTATEGENERATOR") != null) {
                 paramTab?.put(key = "__VIEWSTATEGENERATOR" , value = htmldoc.getElementById("__VIEWSTATEGENERATOR").attributes().get("value"))
             }
+
 
             if (htmldoc.getElementById("__EVENTVALIDATION") != null) {
                 paramTab?.put(key = "__EVENTVALIDATION" , value = htmldoc.getElementById("__EVENTVALIDATION").attributes().get("value"))
@@ -72,16 +74,16 @@ class JP1KanshiStatus(val baseurl: String = "http://161.93.233.94/") {
             }
 
             response.close()  // don't forget
-
             return paramStr
 
         } else {
+            response.close()  // don't forget
             return "response error"
         }
     }
 
     /*
-　　* JP1監視Status問い合わせ用URLにrequestをするために必要なパラメータを予め取得する
+　　* JP1監視 指定のhostnameの　監視状態を取得する
 　　*/
     fun CheckJP1HostStatus(targethostname: String): HashMap<String,String>? {
 
@@ -117,7 +119,7 @@ class JP1KanshiStatus(val baseurl: String = "http://161.93.233.94/") {
             }
 
             // test file 出録
-            File("/home/share/testJP1.html").bufferedWriter().use{ out -> out.write(strRes)}
+            //File("/home/share/testJP1.html").bufferedWriter().use{ out -> out.write(strRes)}
 
             // 取得した文字列を、jsoupでHTMLとしてパース
             val htmldoc: org.jsoup.nodes.Document = Jsoup.parse(strRes)

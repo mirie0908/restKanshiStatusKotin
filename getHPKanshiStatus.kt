@@ -90,6 +90,7 @@ class HPKanshiStatus(val url: String = "http://161.95.212.225:30000/HostSearch/"
             return paramStr
 
         } else {
+            response.close()  // don't forget
             return "response error"
         }
     }
@@ -97,7 +98,7 @@ class HPKanshiStatus(val url: String = "http://161.95.212.225:30000/HostSearch/"
 
 
     /*
- 　　* HP監視Status問い合わせ用URLにrequestをするために必要なパラメータを予め取得する
+ 　　* HP監視 指定のhostnameの　監視状態を取得する
  　　*/
     fun CheckHostStatus(theHostname: String): HashMap<String,String>? {
 
