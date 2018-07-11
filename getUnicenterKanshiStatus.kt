@@ -56,7 +56,7 @@ class UnicenterKanshiStatus(val url: String = "http://kanshi-portal.mx.toyota.co
     //**************************************************
     // postリクエストに必要なrequestbody用パラメータを取得
     //**************************************************
-    fun getReqParam(): String {
+    fun getReqParam(): String? {
 
         val client: OkHttpClient = okhttp3.OkHttpClient()
 
@@ -116,7 +116,8 @@ class UnicenterKanshiStatus(val url: String = "http://kanshi-portal.mx.toyota.co
 
         } else {
             response.close()
-            return "response error"
+            ///return "response error"
+            return null
         }
     }
 
@@ -127,30 +128,42 @@ class UnicenterKanshiStatus(val url: String = "http://kanshi-portal.mx.toyota.co
 
         val client: OkHttpClient = okhttp3.OkHttpClient()
 
+        // hostnameがUnicenter監視対象か。パラメータの整え
+        val targetHostnames: List<String> = this.getAllTargetHostnames()  //.map { it -> it.toUpperCase() }
+        val targethostnameStr: String? = targetHostnames.matchedStr(targethostname)  //自作拡張関数
+
+        //val targethostnameStr: String = targethostname //"${targethostname}++++++++++++++++++++++++++++++++++++++++".substring(0,40)
+
+        if ( targethostnameStr == null ) {
+            println("指定の${targethostname} は、Unicenter監視対象ではありません。")
+
+            return hashMapOf(
+                    "hostname" to targethostname,
+                    "kanshiSystem" to "",
+                    "status" to "",
+                    "date" to "",
+                    "LastSuppressedData" to ""
+            )
+        }
+
+        println("指定の${targethostname} は、Unicenter監視対象です。")
+        //retval= UnicenterKanshi.CheckUnicenterHostStatus(theStr)
+
         // Unicenter監視URLにリクエストするためのパラメータの生成
 
-        var bodyParam: String = this.getReqParam()
+        val getReqParam: String? = this.getReqParam()
+        var bodyParam: String? = ""
+
+        if ( getReqParam != null) {
+            bodyParam = "${getReqParam}DropDownList1=${URLEncoder.encode(targethostnameStr)}&ctl01=${URLEncoder.encode("表　示")}"
+        } else {
+            return null
+        }
 /*
-        if ( ! ( """__EVENTTARGET""".toRegex().matches(bodyParam)) ) {
-            bodyParam = "__EVENTTARGET=&${bodyParam}"
-        }
-
-        if ( ! ( """__EVENTARGUMENT""".toRegex().matches(bodyParam)) ) {
-            bodyParam = "__EVENTARGUMENT=&${bodyParam}"
-        }
-*/
-        // hostnameパラメータの整え
-        val targethostnameStr: String = targethostname //"${targethostname}++++++++++++++++++++++++++++++++++++++++".substring(0,40)
-
-        bodyParam = "${bodyParam}DropDownList1=${URLEncoder.encode(targethostnameStr)}&ctl01=${URLEncoder.encode("表　示")}"
-
-        /*
-        println("bodyParam : ")
         bodyParam.split('&').forEach {
             println(it)
         }
-        */
-
+*/
         // Unicenter監視URLにリクエストし、監視抑止状態を取得
         val request: Request = Request.Builder()
                 .url(url)
@@ -176,7 +189,7 @@ class UnicenterKanshiStatus(val url: String = "http://kanshi-portal.mx.toyota.co
             }
 
             // test file 出録
-            //File("/home/share/testUnicenter.html").bufferedWriter().use { out -> out.write(strRes) }
+            // File("/home/share/testUnicenter.html").bufferedWriter().use { out -> out.write(strRes) }
 
             // 取得した文字列を、jsoupでHTMLとしてパース
             val htmldoc: org.jsoup.nodes.Document = Jsoup.parse(strRes)
@@ -187,18 +200,33 @@ class UnicenterKanshiStatus(val url: String = "http://kanshi-portal.mx.toyota.co
 
             val tbodyElm: Element = htmldoc.getElementById("DataGrid1").getElementsByTag("tbody").first()
 
-            val tdElms: org.jsoup.select.Elements = tbodyElm.child(1) // tbody要素の下の２番めのtr要素
-                    .getElementsByTag("td")                       //  その下のtdタグ
+            val tdElms: org.jsoup.select.Elements? = tbodyElm
+                    .child(1)                       // tbody要素の下の２番めのtr要素
+                    .getElementsByTag("td")      //  その下のtdタグ
 
-            var retval: HashMap<String,String>? = if ((tdElms != null) && (tdElms.size >= 10)) {
-                hashMapOf("status" to tdElms.get(6).child(0).text(),
+            val retval: HashMap<String,String>? = if ((tdElms != null) && (tdElms.size >= 10)) {
+                println("tbodyの下の２番めのtrの下に、tdが１０個以上あります。")
+                println("lastSuppressedData : ${tdElms.get(9).child(0).text()}")
+                hashMapOf(
+                        "hostname" to targethostname,
+                        "kanshiSystem" to "Unicenter",
+                        "status" to tdElms.get(6).child(0).text(),
                         "date" to tdElms.get(7).child(0).text(),
-                        "lastSupDate" to tdElms.get(9).child(0).text()
+                        "lastSuppressedDate" to tdElms.get(9).child(0).text()
                 )
             } else {
-                null
+                println("tbodyの下の２番めのtrの下に、tdが１０個以上ありません。")
+                //null
+                return hashMapOf(
+                        "hostname" to targethostname,
+                        "kanshiSystem" to "",
+                        "status" to "",
+                        "date" to "",
+                        "lastSuppressedDate" to ""
+                )
             }
 
+            //println("value to return: ${retval?.get("lastSuppressedDate")}")
 
             response.close()
             return retval
@@ -236,10 +264,9 @@ fun main(args: Array<String>) {
 
     val targethostname = "APLQDTC1837".toLowerCase() //Unicenterの監視Status画面のselect option値=ホスト名は、全て小文字なので、targethostnameは小文字にして渡すこと。
 
+    /*
     val targetHostnames: List<String> = UnicenterKanshi.getAllTargetHostnames()  //.map { it -> it.toUpperCase() }
-
     val theStr: String? = targetHostnames.matchedStr(targethostname)  //自作拡張関数
-
     var retval: HashMap<String,String>? = null
 
     if ( theStr != null ) {
@@ -248,7 +275,10 @@ fun main(args: Array<String>) {
     } else {
         println("指定の${targethostname} は、Unicenter監視対象ではありません。")
     }
+    */
 
-    println("status= ${retval?.get("status")} : date= ${retval?.get("date")} : last Sup Date= ${retval?.get("lastSupDate")}")
+    val retval: HashMap<String,String>? = UnicenterKanshi.CheckUnicenterHostStatus(targethostname)
+
+    println("status= ${retval?.get("status")} : date= ${retval?.get("date")} : last Sup Date= ${retval?.get("lastSuppressedDate")}")
 
 }

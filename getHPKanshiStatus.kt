@@ -80,18 +80,20 @@ class HPKanshiStatus(val url: String = "http://161.95.212.225:30000/HostSearch/"
                     paramStr += "${it.key}=${URLEncoder.encode(it.value)}&"
                 }
 
+                response.close()  // don't forget
+                return paramStr
 
             } else {
                 println("nodelist count less than 0")
+                response.close()
+                return null
             }
 
-            response.close()  // don't forget
-
-            return paramStr
 
         } else {
             response.close()  // don't forget
-            return "response error"
+            //return "response error"
+            return null
         }
     }
 
@@ -112,7 +114,14 @@ class HPKanshiStatus(val url: String = "http://161.95.212.225:30000/HostSearch/"
         }
 
         // HP監視URLにリクエストするためのパラメータの生成
-        val bodyParam: String = "${this.getReqParam()}txtHostname=${targethostname}&btnShow=%E8%A1%A8%E7%A4%BA"
+        val getReqParam: String? = this.getReqParam()
+        var bodyParam: String = ""
+        if ( getReqParam != null) {
+            bodyParam = "${getReqParam}txtHostname=${targethostname}&btnShow=%E8%A1%A8%E7%A4%BA"
+        } else {
+            println("cannot getReqParam")
+            return null
+        }
 
         // HP監視URLにリクエストし、監視抑止状態を取得
         val request: Request = Request.Builder()
@@ -141,7 +150,7 @@ class HPKanshiStatus(val url: String = "http://161.95.212.225:30000/HostSearch/"
             //println("strRes : ${strRes}")
 
             // test file 出録
-            File("/home/share/test.html").bufferedWriter().use{out -> out.write(strRes)}
+            //File("/home/share/test.html").bufferedWriter().use{out -> out.write(strRes)}
 
             // 取得した文字列を、jsoupでHTMLとしてパース
             val htmldoc: org.jsoup.nodes.Document = Jsoup.parse(strRes)
@@ -163,9 +172,16 @@ class HPKanshiStatus(val url: String = "http://161.95.212.225:30000/HostSearch/"
             println("size of targetAllTDtxt: ${targetAllTDtxt?.size ?: "zero"}")
 
             val targetTxtMap: HashMap<String,String>? = if (( targetAllTDtxt != null ) && ( targetAllTDtxt.size >= 4)) {
-                hashMapOf("status" to targetAllTDtxt.get(2), "date" to targetAllTDtxt.get(3))  // <td>の４個のうち、最後の２個のテキスト
+                hashMapOf("hostname" to targethostname,
+                        "kanshiSystem" to "HP",
+                        "status" to targetAllTDtxt.get(2),
+                        "date" to targetAllTDtxt.get(3))  // <td>の４個のうち、最後の２個のテキスト
             } else {
-                null
+                //null
+                hashMapOf("hostname" to targethostname,
+                        "kanshiSystem" to "",
+                        "status" to "",
+                        "date" to "")
             }
 
             response.close()

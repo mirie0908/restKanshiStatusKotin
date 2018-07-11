@@ -78,7 +78,8 @@ class JP1KanshiStatus(val baseurl: String = "http://161.93.233.94/") {
 
         } else {
             response.close()  // don't forget
-            return "response error"
+            //return "response error"
+            return null
         }
     }
 
@@ -93,7 +94,16 @@ class JP1KanshiStatus(val baseurl: String = "http://161.93.233.94/") {
 
         // JP1監視URLにリクエストするためのパラメータの生成
         val additionalParam: String = "__EVENTTARGET=&__EVENTARGUMENT=&"  // ともにvalueはヌル"
-        val bodyParam: String = "${additionalParam}${this.getReqParam()}hostname=${targethostname}&Hyouji=%E8%A1%A8%E7%A4%BA"
+
+        val getReqParam: String? = this.getReqParam()
+        var bodyParam: String = ""
+        if (getReqParam != null) {
+            bodyParam = "${additionalParam}${getReqParam}hostname=${targethostname}&Hyouji=%E8%A1%A8%E7%A4%BA"
+        } else {
+            println("cannot getReqParam")
+            return null
+        }
+
 
         // JP1監視URLにリクエストし、監視抑止状態を取得
         val request: Request = Request.Builder()
@@ -142,9 +152,14 @@ class JP1KanshiStatus(val baseurl: String = "http://161.93.233.94/") {
             }
 
             if (firstTargetElm == null) {
-                println("２．関し抑止のtdタグ要素は見つかりませんでした。以降のhtmlトラバースができないので処理を中止します。")
+                println("２．監視抑止のtdタグ要素は見つかりませんでした。JP1監視対象外と推測されます。以降のhtmlトラバースができないので処理を中止します。")
                 response.close()
-                return null
+                //return null
+                return hashMapOf(
+                        "hostname" to targethostname,
+                        "kanshiSystem" to "",
+                        "status" to "",
+                        "date" to "")
             }
 
             val tableElm: Element? = firstTargetElm?.parent()?.nextElementSibling() //親のtrの　最初の(0番目の)兄弟tr
@@ -166,12 +181,19 @@ class JP1KanshiStatus(val baseurl: String = "http://161.93.233.94/") {
             println("targetAllTDtxt size : ${targetAllTDtxt?.size ?: 0}")     // -> 最初、これ１１個も取れていた。。。 これ パースが失敗しているっぽい。
 
             val targetTxtMap: HashMap<String,String>? = if (( targetAllTDtxt != null ) && ( targetAllTDtxt.size >= 4)) {
-                hashMapOf("status" to targetAllTDtxt.get(2), "date" to targetAllTDtxt.get(3))  // <td>の４個のうち、最後の２個のテキスト
+                hashMapOf(
+                        "hostname" to targethostname,
+                        "kanshiSystem" to "JP1",
+                        "status" to targetAllTDtxt.get(2),
+                        "date" to targetAllTDtxt.get(3))  // <td>の４個のうち、最後の２個のテキスト
             } else {
-                null
+                //null
+                hashMapOf(
+                        "hostname" to targethostname,
+                        "kanshiSystem" to "",
+                        "status" to "",
+                        "date" to "")
             }
-
-
 
 
             response.close()

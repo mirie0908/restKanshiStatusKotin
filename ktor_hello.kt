@@ -32,9 +32,9 @@ fun main(args: Array<String>) {
 
             // HP監視　で、指定のhostnameの監視抑止状態を、JSONで返す
             get( "HP/KanshiStatus/{targetHostname}") {
-                val targetHostname = call.parameters["targetHostname"]
+                val targetHostname: String? = call.parameters["targetHostname"]
                 val HPKanshi = HPKanshiStatus()
-                val retval: HashMap<String, String>? = HPKanshi.CheckHostStatus(targetHostname)
+                val retval: HashMap<String, String>? = HPKanshi.CheckHostStatus(targetHostname!!)
             }
 
 
