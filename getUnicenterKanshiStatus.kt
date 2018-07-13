@@ -129,8 +129,10 @@ class UnicenterKanshiStatus(val url: String = "http://kanshi-portal.mx.toyota.co
         val client: OkHttpClient = okhttp3.OkHttpClient()
 
         // hostnameがUnicenter監視対象か。パラメータの整え
+        val targethostnameLower: String = targethostname.toLowerCase()  // Unicenter監視は、ホスト名はすべて小文字オンリーのようなので、小文字に変換して調べる
+
         val targetHostnames: List<String> = this.getAllTargetHostnames()  //.map { it -> it.toUpperCase() }
-        val targethostnameStr: String? = targetHostnames.matchedStr(targethostname)  //自作拡張関数
+        val targethostnameStr: String? = targetHostnames.matchedStr(targethostnameLower)  //自作拡張関数
 
         //val targethostnameStr: String = targethostname //"${targethostname}++++++++++++++++++++++++++++++++++++++++".substring(0,40)
 
@@ -252,9 +254,10 @@ fun main(args: Array<String>) {
     UnicenterKanshi.getAllTargetHostnames().forEach {
         hostnamestr += "${it}\n"
     }
+    */
     // test all hostname write to textfile
-    File("/home/share/testUnicenerHostnames.txt").bufferedWriter().use{ out -> out.write(hostnamestr)}
-*/
+    //File("/home/share/testUnicenerHostnames.txt").bufferedWriter().use{ out -> out.write(hostnamestr)}
+
 /*
     println("Unicenter kanshi request param is : ")  // Unicenterでは、EVENTTARGETもEVENTARGUMENTも、ヌルとしてちゃんと取れていて、returnされる文字列にちゃんと含まれている。
     UnicenterKanshi.getReqParam().split('&').forEach {
@@ -262,7 +265,7 @@ fun main(args: Array<String>) {
     }
     */
 
-    val targethostname = "APLQDTC1837".toLowerCase() //Unicenterの監視Status画面のselect option値=ホスト名は、全て小文字なので、targethostnameは小文字にして渡すこと。
+    val targethostname = "APLQDTC1837" //.toLowerCase() //Unicenterの監視Status画面のselect option値=ホスト名は、全て小文字なので、targethostnameは小文字にして渡すこと。
 
     /*
     val targetHostnames: List<String> = UnicenterKanshi.getAllTargetHostnames()  //.map { it -> it.toUpperCase() }

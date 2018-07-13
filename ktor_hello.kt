@@ -7,9 +7,21 @@ import io.ktor.server.netty.*
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import io.ktor.features.ContentNegotiation
+import io.ktor.gson.gson
+import io.ktor.request.*
+import java.text.DateFormat
 
 fun main(args: Array<String>) {
     val server = embeddedServer(Netty, port = 8080) {
+
+        install(ContentNegotiation) {
+            gson {
+                setDateFormat(DateFormat.LONG)
+                setPrettyPrinting()
+            }
+        }
+
         routing {
 
             get("/") {
@@ -35,6 +47,20 @@ fun main(args: Array<String>) {
                 val targetHostname: String? = call.parameters["targetHostname"]
                 val HPKanshi = HPKanshiStatus()
                 val retval: HashMap<String, String>? = HPKanshi.CheckHostStatus(targetHostname!!)
+            }
+
+            // post request test
+            post("/posttest") {
+
+                println("requested content type: ${call.request.contentType().toString()}")
+
+                val requesteddata: List<String>? = call.receive<List<String>>()       //.request.queryString()
+
+                println("size of requested data: ${requesteddata?.size ?:0}")
+
+                call.respondText("requested string: ${requesteddata?.firstOrNull()}")
+
+
             }
 
 

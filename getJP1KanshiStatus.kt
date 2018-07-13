@@ -92,13 +92,15 @@ class JP1KanshiStatus(val baseurl: String = "http://161.93.233.94/") {
 
         val url = baseurl + "ItemList.aspx"
 
+        val targethostnameCAP: String = targethostname.toUpperCase()  // JP1監視は、ホスト名はすべて大文字オンリーのようなので、大文字に変換して調べる
+
         // JP1監視URLにリクエストするためのパラメータの生成
         val additionalParam: String = "__EVENTTARGET=&__EVENTARGUMENT=&"  // ともにvalueはヌル"
 
         val getReqParam: String? = this.getReqParam()
         var bodyParam: String = ""
         if (getReqParam != null) {
-            bodyParam = "${additionalParam}${getReqParam}hostname=${targethostname}&Hyouji=%E8%A1%A8%E7%A4%BA"
+            bodyParam = "${additionalParam}${getReqParam}hostname=${targethostnameCAP}&Hyouji=%E8%A1%A8%E7%A4%BA"
         } else {
             println("cannot getReqParam")
             return null
@@ -214,7 +216,7 @@ class JP1KanshiStatus(val baseurl: String = "http://161.93.233.94/") {
 fun main(args: Array<String>) {
     val JP1Kanshi = JP1KanshiStatus()
 
-    val targethost = "G-HASHIGO"
+    val targethost = "g-hashigo"  //"G-HASHIGO"
     //println("JP1 kanshi request param of ${targethost} is : ${JP1Kanshi.getReqParam()}")
 
     val retval: HashMap<String,String>? = JP1Kanshi.CheckJP1HostStatus(targethost)
